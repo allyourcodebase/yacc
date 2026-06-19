@@ -10,20 +10,44 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2.2.1
+      - name: Run fmt
+        run: zig build fmt
+      - name: check git diff
+        run: git diff --exit-code
+
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-linux-musl
+          - target: x86_64-linux-gnu
+          - target: x86_64-linux-musl
+          - target: aarch64-linux-gnu
+          - target: aarch64-linux-musl
+          - target: x86_64-macos-none
+          - target: aarch64-macos-none
+          - target: x86_64-windows-gnu
+          - target: aarch64-windows-gnu
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Set up Zig
-        uses: mlugg/setup-zig@v2.0.5
+        uses: mlugg/setup-zig@v2.2.1
 
-      - name: Run `build`
-        run: zig build -Dtarget=x86_64-linux-musl install
+      - name: build
+        run: zig build "-Dtarget=${{ matrix.target }}" install
 
       - uses: actions/upload-artifact@v4
         with:
-          name: yacc
+          name: "yacc-${{ matrix.target }}"
           path: zig-out/*
